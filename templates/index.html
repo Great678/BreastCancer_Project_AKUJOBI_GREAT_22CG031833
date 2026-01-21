@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Breast Cancer Prediction System</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔬 Breast Cancer Prediction System</h1>
+            <p class="subtitle">Machine Learning Based Tumor Classification</p>
+            <div class="disclaimer-banner">
+                <p><strong>⚠️ DISCLAIMER:</strong> This system is strictly for educational purposes and must not be presented as a medical diagnostic tool.</p>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="content-wrapper">
+            <!-- Prediction Form -->
+            <section class="prediction-section">
+                <h2>Enter Tumor Characteristics</h2>
+                <p class="section-description">Please provide the measured values from the tumor analysis:</p>
+                
+                <form id="predictionForm">
+                    <div class="form-group">
+                        <label for="radius_mean">
+                            Radius Mean
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="radius_mean" 
+                            name="radius_mean" 
+                            step="0.01"
+                            min="0"
+                            max="50"
+                            required
+                            placeholder="e.g., 14.5"
+                        >
+                        <small>Average distance from center to perimeter (0-50)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="texture_mean">
+                            Texture Mean
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="texture_mean" 
+                            name="texture_mean" 
+                            step="0.01"
+                            min="0"
+                            max="50"
+                            required
+                            placeholder="e.g., 19.3"
+                        >
+                        <small>Standard deviation of gray-scale values (0-50)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="area_mean">
+                            Area Mean
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="area_mean" 
+                            name="area_mean" 
+                            step="0.1"
+                            min="0"
+                            max="3000"
+                            required
+                            placeholder="e.g., 456.2"
+                        >
+                        <small>Mean size of the tumor (0-3000)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="smoothness_mean">
+                            Smoothness Mean
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="smoothness_mean" 
+                            name="smoothness_mean" 
+                            step="0.0001"
+                            min="0"
+                            max="1"
+                            required
+                            placeholder="e.g., 0.0873"
+                        >
+                        <small>Local variation in radius lengths (0-1)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="compactness_mean">
+                            Compactness Mean
+                            <span class="required">*</span>
+                        </label>
+                        <input 
+                            type="number" 
+                            id="compactness_mean" 
+                            name="compactness_mean" 
+                            step="0.0001"
+                            min="0"
+                            max="1"
+                            required
+                            placeholder="e.g., 0.0846"
+                        >
+                        <small>Perimeter² / area - 1.0 (0-1)</small>
+                    </div>
+
+                    <button type="submit" class="btn-predict">
+                        Analyze Tumor
+                    </button>
+                </form>
+            </section>
+
+            <!-- Results Section -->
+            <section class="results-section">
+                <h2>Analysis Result</h2>
+                <div id="resultContainer" class="result-container hidden">
+                    <div class="result-card" id="resultCard">
+                        <div class="result-icon" id="resultIcon"></div>
+                        <h3>Prediction</h3>
+                        <div class="diagnosis-display">
+                            <span id="diagnosisResult" class="diagnosis">---</span>
+                        </div>
+                        <div class="confidence-display">
+                            <p>Confidence: <span id="confidence">0</span>%</p>
+                        </div>
+                        <div class="probability-bars">
+                            <div class="prob-item">
+                                <label>Malignant</label>
+                                <div class="progress-bar">
+                                    <div class="progress" id="malignantBar" style="width: 0%"></div>
+                                </div>
+                                <span id="malignantProb">0%</span>
+                            </div>
+                            <div class="prob-item">
+                                <label>Benign</label>
+                                <div class="progress-bar">
+                                    <div class="progress benign" id="benignBar" style="width: 0%"></div>
+                                </div>
+                                <span id="benignProb">0%</span>
+                            </div>
+                        </div>
+                        <p class="result-note">For educational purposes only. Consult a medical professional for actual diagnosis.</p>
+                    </div>
+                </div>
+
+                <div id="errorContainer" class="error-container hidden">
+                    <div class="error-message" id="errorMessage"></div>
+                </div>
+
+                <div id="loadingContainer" class="loading-container hidden">
+                    <div class="spinner"></div>
+                    <p>Analyzing tumor characteristics...</p>
+                </div>
+            </section>
+        </div>
+
+        <!-- Model Info Section -->
+        <section class="info-section">
+            <h2>Model Information</h2>
+            
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <h4>Accuracy</h4>
+                    <p class="metric-value" id="accuracy">-</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Precision</h4>
+                    <p class="metric-value" id="precision">-</p>
+                </div>
+                <div class="metric-card">
+                    <h4>Recall</h4>
+                    <p class="metric-value" id="recall">-</p>
+                </div>
+                <div class="metric-card">
+                    <h4>F1-Score</h4>
+                    <p class="metric-value" id="f1_score">-</p>
+                </div>
+                <div class="metric-card">
+                    <h4>ROC AUC</h4>
+                    <p class="metric-value" id="roc_auc">-</p>
+                </div>
+            </div>
+
+            <div class="features-info">
+                <h3>Selected Features (5 of 8)</h3>
+                <p class="info-text">The model uses these 5 features from tumor cell measurements:</p>
+                <ul>
+                    <li><strong>Radius Mean</strong> - Average distance from center to perimeter</li>
+                    <li><strong>Texture Mean</strong> - Standard deviation of gray-scale values</li>
+                    <li><strong>Area Mean</strong> - Mean size of the tumor</li>
+                    <li><strong>Smoothness Mean</strong> - Local variation in radius lengths</li>
+                    <li><strong>Compactness Mean</strong> - Perimeter² / area - 1.0</li>
+                </ul>
+            </div>
+
+            <div class="model-info">
+                <h3>Algorithm & Performance</h3>
+                <p><strong>Algorithm:</strong> Logistic Regression</p>
+                <p><strong>Training Method:</strong> 80-20 train-test split with stratification</p>
+                <p><strong>Dataset:</strong> Breast Cancer Wisconsin (Diagnostic)</p>
+                <p><strong>Total Samples:</strong> 569 (357 Benign, 212 Malignant)</p>
+            </div>
+
+            <div class="classification-info">
+                <h3>Classification Output</h3>
+                <div class="class-box benign-box">
+                    <h4>🟢 Benign</h4>
+                    <p>Non-cancerous tumor. Normal tissue growth.</p>
+                </div>
+                <div class="class-box malignant-box">
+                    <h4>🔴 Malignant</h4>
+                    <p>Potentially cancerous tumor. Requires medical attention.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>&copy; 2024 Breast Cancer Prediction System | CSC415 Project | Educational Purposes Only</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+</html>
